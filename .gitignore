@@ -1,4 +1,5 @@
 build
+*.t7
 
 # Compiled Object files
 *.slo
