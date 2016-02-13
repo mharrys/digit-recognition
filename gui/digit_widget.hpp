@@ -17,6 +17,7 @@ public:
     DigitWidget(std::unique_ptr<Classifier> classifier, QWidget * parent = 0);
 public slots:
     void predict(QImage image);
+    void clear();
 private:
     std::unique_ptr<Classifier> classifier;
 };

@@ -8,6 +8,7 @@ DigitWidget::DigitWidget(std::unique_ptr<Classifier> classifier, QWidget * paren
 {
     setupUi(this);
     QObject::connect(clearCanvasButton, &QPushButton::clicked, canvasWidget, &CanvasWidget::clear);
+    QObject::connect(clearCanvasButton, &QPushButton::clicked, this, &DigitWidget::clear);
     QObject::connect(canvasWidget, &CanvasWidget::changed, this, &DigitWidget::predict);
 }
 
@@ -34,4 +35,18 @@ void DigitWidget::predict(QImage image)
     bar7->setValue(result[6]);
     bar8->setValue(result[7]);
     bar9->setValue(result[8]);
+}
+
+void DigitWidget::clear()
+{
+    bar0->setValue(0.0);
+    bar1->setValue(0.0);
+    bar2->setValue(0.0);
+    bar3->setValue(0.0);
+    bar4->setValue(0.0);
+    bar5->setValue(0.0);
+    bar6->setValue(0.0);
+    bar7->setValue(0.0);
+    bar8->setValue(0.0);
+    bar9->setValue(0.0);
 }
