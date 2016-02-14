@@ -3,6 +3,8 @@
 Logistic regression to classify digits with a convolutional neural network
 (CNN) or a multilayer perceptron (MLP) using Torch7.
 
+![demo](https://github.com/mharrys/digit-recognition/raw/master/demo.gif)
+
 # Dependencies
 
 Training and using the model depends on [MNIST Dataset for
