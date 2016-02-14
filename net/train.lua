@@ -122,11 +122,12 @@ for i = 1, iterations do
     xlua.progress(i, iterations)
 end
 
+print("nn: save model")
+
 model_name = string.format(
     "%s_model-%s.t7",
     args.model,
     os.date("%y%m%d_%H%M%S")
 )
-print("nn: save model")
 netToolkit.saveNet(model_name, model)
 print("nn: model saved as " .. model_name)
