@@ -19,8 +19,8 @@ function predict(pixels)
 end
 
 function predict_digit(pixels)
-    result = predict(pixels)
-    _, digit = torch.max(pred, 1)
+    local pred = predict(pixels)
+    local _, digit = torch.max(pred, 1)
     digit = digit[1]
     return digit == 10 and 0 or digit
 end
