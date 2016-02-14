@@ -1,7 +1,8 @@
+require "net-toolkit"
 require "nn"
 require "torch"
 
-model = torch.load("mlp_model.t7")
+model = netToolkit.loadNet("mlp_model.t7")
 model:evaluate()
 
 function predict(pixels)

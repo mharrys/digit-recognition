@@ -1,65 +1,105 @@
+require "io"
+require "gnuplot"
+require "net-toolkit"
 require "nn"
 require "torch"
-
--- prepare training dataset
+require "optim"
+require "xlua"
 
 mnist = require "mnist"
+
+print("nn: prepare training dataset")
+
 mnist_train = mnist.traindataset()
+x_train = mnist_train.data / 255
+y_train = mnist_train.label
 
-image = {
-    w = 28,
-    h = 28,
-    pixels = 28 * 28
-}
-digits = 10
+print("nn: prepare test dataset")
 
-x = torch.reshape(mnist_train.data, mnist_train:size(), image.pixels) / 255
-y = mnist_train.label
+mnist_test = mnist.testdataset()
+x_test = mnist_test.data / 255
+y_test = mnist_test.label
 
-dataset = {}
-function dataset:size() return mnist_train:size() end
-for i = 1, dataset:size() do
-    dataset[i] = {x[i], y[i]}
-end
+print("nn: prepare model")
 
--- train model
+classes = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10} -- 10 is the label for 0
 
-inputs = image.pixels
+inputs = 28 * 28 -- number of pixels
 hidden = 100
-outputs = digits
+outputs = #classes
 
 model = nn.Sequential()
+model:add(nn.Reshape(inputs))
 model:add(nn.Linear(inputs, hidden))
 model:add(nn.ReLU())
 model:add(nn.Linear(hidden, outputs))
 
 criterion = nn.CrossEntropyCriterion() -- LogSoftMax with ClassNLLCriterion
 
-trainer = nn.StochasticGradient(model, criterion)
-trainer.learningRateDecay = 0
-trainer.learningRate = 0.01
-trainer.maxIteration = 25
-trainer:train(dataset)
+params, grad_params = model:getParameters()
+optim_config = {
+    learningRate = 0.1,
+}
 
--- prepare test dataset
+epochs = 4
+batch_size = 5
+batch_index = 0
 
-mnist_test = mnist.testdataset()
-x_test = torch.reshape(mnist_test.data, mnist_test:size(), image.pixels) / 255
-y_test = mnist_test.label
+train_size = x_train:size()[1]
+test_size = x_test:size()[1]
 
--- test model
+print("nn: train model")
 
-model:evaluate()
-pred = model:forward(x_test)
-errors = 0
-for i = 1, mnist_test:size() do
-    _, digit = torch.max(pred[i], 1)
-    errors = digit[1] == y_test[i] and errors or errors + 1
+function feval(x)
+    if x ~= params then
+        params:copy(x)
+    end
+
+    local batch_start = batch_index * batch_size + 1
+    local batch_end = math.min(train_size, (batch_index + 1) * batch_size + 1)
+    batch_index = batch_end == train_size and 0 or batch_index + 1
+
+    local batch_input = x_train[{{batch_start, batch_end}, {}}]
+    local batch_target = y_train[{{batch_start, batch_end}}]
+
+    grad_params:zero()
+    local batch_output = model:forward(batch_input)
+    local batch_loss = criterion:forward(batch_output, batch_target)
+    local grad_output = criterion:backward(batch_output, batch_target)
+    model:backward(batch_input, grad_output)
+
+    return batch_loss, grad_params
 end
-print("mlp: " .. errors .. "/" .. mnist_test:size() .. " errors (" .. errors / mnist_test:size() .. ")")
 
--- save model
+function ftest()
+    local conf = optim.ConfusionMatrix(classes)
+    conf:zero()
+    local iterations = math.ceil(test_size / batch_size) - 1
+    for i = 0, iterations do
+        local batch_start = i * batch_size + 1
+        local batch_end = math.min(test_size, (i + 1) * batch_size + 1)
+        local batch_input = x_test[{{batch_start, batch_end}, {}}]
+        local batch_target = y_test[{{batch_start, batch_end}}]
+        conf:batchAdd(model:forward(batch_input), batch_target)
+    end
+    return conf
+end
+
+iterations = epochs * math.ceil(train_size / batch_size)
+updates = math.ceil(0.1 * iterations)
+for i = 1, iterations do
+    optim.adagrad(feval, params, optim_config)
+    if i % updates == 0 then
+        model:evaluate()
+        io.write("nn: Testing ")
+        print(ftest())
+        model:training()
+    end
+    xlua.progress(i, iterations)
+end
+
+print("nn: save model")
 
 name = "mlp_model.t7"
-torch.save(name, model)
-print("mlp: model saved as " .. name)
+netToolkit.saveNet(name, model)
+print("nn: model saved as " .. name)
