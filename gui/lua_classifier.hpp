@@ -7,12 +7,10 @@
 
 struct lua_State;
 
-// Use and external torch7 file to make predictions. The file is expected to
-// have a "predict" function that takes a table of pixels as parameters and
-// return probabilities for each digit in a table.
+// Use a torch7 model to make predictions.
 class LuaClassifier : public Classifier {
 public:
-    // Construct classifier with specified file path.
+    // Construct classifier with specified file path to model.
     LuaClassifier(std::string const & path);
     ~LuaClassifier();
     std::vector<double> predict(std::vector<unsigned char> const & pixels) override;

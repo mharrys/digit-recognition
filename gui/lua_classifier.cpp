@@ -10,9 +10,25 @@ extern "C" {
 
 LuaClassifier::LuaClassifier(std::string const & path)
 {
+    const std::string program =
+        "require \"net-toolkit\"\n"
+        "require \"nn\"\n"
+        "require \"torch\"\n"
+        "model = netToolkit.loadNet(\"" + path + "\")\n"
+        "model:evaluate()\n"
+        "function predict(pixels)\n"
+        "    x = torch.Tensor(pixels) / 255\n"
+        "    pred = model:forward(x)\n"
+        "    pred = torch.exp(pred) -- LogSoftMax is used\n"
+        "    -- scale to between 0 and 1\n"
+        "    local pred_min = pred:min()\n"
+        "    local pred_max = pred:max()\n"
+        "    pred = (pred - pred_min) / (pred_max - pred_min)\n"
+        "    return pred:totable()\n"
+        "end\n";
     L = lua_open();
     luaL_openlibs(L);
-    if (luaL_dofile(L, path.c_str())) {
+    if (luaL_dostring(L, program.c_str())) {
         std::cerr << "lua: " << lua_tostring(L, -1) << std::endl;
         lua_pop(L, 1);
     }

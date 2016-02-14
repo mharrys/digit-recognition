@@ -20,7 +20,7 @@ int main(int argc, char * argv[])
     QCommandLineParser parser;
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.addPositionalArgument("path", "File path to torch7 file");
+    parser.addPositionalArgument("path", "File path to torch7 model");
     parser.process(app);
 
     auto args = parser.positionalArguments();
